@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="common targets for load testing in OBB" xmlns:ac="antlib:net.sf.antcontrib" default="" basedir=".">
+	<property file="build.properties" />
+	<property file="config.properties" />
+
+	<property name="JMETER_HOME" value="${basedir}/tools/jmeter" />
+	<property name="jmeter.cmdtool.path" value="${JMETER_HOME}/lib/ext/CMDRunner.jar" />
+	<property name="templates.dir" value="${basedir}/templates" />
+	<property name="results.dir" value="${user.home}/performance-results/" />
+
+
+	<taskdef uri="antlib:net.sf.antcontrib" resource="net/sf/antcontrib/antlib.xml" classpath="${lib.dir}/ant-contrib-1.0b3.jar" />
+	<taskdef name="jmeter" classname="org.programmerplanet.ant.taskdefs.jmeter.JMeterTask" classpath="${lib.dir}/ant-jmeter-1.1.1.jar" />
+
+	<target name="checkProperties">
+		<fail unless="JMETER_HOME">JMETER_HOME must be set</fail>
+	</target>
+
+	<!-- Init load testing. Create folders for storing results. -->
+	<target name="load-init">
+		<tstamp prefix="tmpstmp">
+			<format property="touch.time" pattern="MM_dd_yyyy_HH_mm_ss" offset="-5" />
+		</tstamp>
+
+		<property name="res.dir" value="${results.dir}/results_${tmpstmp.touch.time}/bmk${run.env.id}" />
+		<property name="results.dir.jtl" value="${res.dir}/jtl" />
+		<property name="results.dir.csv" value="${res.dir}/csv" />
+		<property name="results.dir.images" value="${res.dir}/images" />
+		<property name="results.dir.html" value="${res.dir}/html" />
+		<property name="results.dir.xml" value="${res.dir}/xml" />
+
+		<mkdir dir="${results.dir.jtl}" />
+		<mkdir dir="${results.dir.csv}" />
+		<mkdir dir="${results.dir.images}" />
+		<mkdir dir="${results.dir.html}" />
+		<mkdir dir="${results.dir.xml}" />
+	</target>
+
+	<macrodef name="run-scenario">
+		<attribute name="scenario" />
+		<sequential>
+			<loadproperties envid="${run.env.id}" scenario="@{scenario}" />
+
+			<path id="tp.file.path.location">
+				<fileset dir="${tests.basedir}" includes="**/@{scenario}.jmx" />
+			</path>
+			<property name="tp.prop.file" refid="tp.file.path.location" />
+
+			<property name="tests.basedir.absolute" location="${tests.basedir}" />
+			<ac:propertyregex property="testplan.full.filepath" input="${tp.prop.file}" regexp="@{scenario}.jmx" replace="" />
+
+			<ac:propertyregex property="testplan.relative.filepath" input="${testplan.full.filepath}" regexp="${tests.basedir.absolute}" replace="" />
+
+			<mkdir dir="${results.dir.jtl}${testplan.relative.filepath}" />
+			<property name="perf.log" value="${results.dir.jtl}${testplan.relative.filepath}/perfmon-@{scenario}.csv" />
+			<touch file="${perf.log}" />
+
+			<jmeter jmeterhome="${JMETER_HOME}" resultlogdir="${results.dir.jtl}" jmeterlogfile="${res.dir}/jmeter.log" runremote="false" jmeterproperties="${results.dir}/jmeter.properties">
+				<testplans dir="${tests.basedir}" includes="**/@{scenario}.jmx" />
+				
+				<property name="user.properties" value="${results.dir}/user.properties" />
+				<property name="system.properties" value="${results.dir}/system.properties" />
+				
+				<property name="user.count" value="${user.count}"/>
+				<property name="run.duration" value="${run.duration}"/>
+				
+				<property name="bmk.host.url" value="${bmk.host.url}"/>
+				
+				<property name="perf.monitor.port" value="${perf.monitor.port}"/>
+				<property name="perf.monitor.server" value="${perf.monitor.server}"/>
+				
+				<property name="jppmfile" value="${perf.log}" />
+
+				<!--<jvmarg value="-Xmx2048m" />   -->
+			</jmeter>
+
+
+		</sequential>
+	</macrodef>
+
+	<!-- Load configuration and scenario properties for performing testing -->
+	<macrodef name="loadproperties">
+		<attribute name="envid" />
+		<attribute name="scenario" />
+		<sequential>
+			<ac:var name="bmk.host.id" unset="true" />
+			<property name="bmk.host.id" value="${bmk.host.@{envid}.id}" />
+
+			<ac:var name="host.url" unset="true" />
+			<property name="host.url" value="${bmk.host.@{envid}.url}" />
+
+			<path id="prop.file.path.location">
+				<fileset dir="${tests.basedir}" includes="**/@{scenario}.bmk${bmk.host.id}.properties" />
+			</path>
+			<property name="users.prop.file" refid="prop.file.path.location" />
+			<delete file="${results.dir}/user.properties" />
+
+			<ac:if>
+				<not>
+					<equals arg1="${users.prop.file}" arg2="" />
+				</not>
+				<then>
+					<copy file="${users.prop.file}" tofile="${results.dir}/user.properties" verbose="true" />
+				</then>
+			</ac:if>
+		</sequential>
+	</macrodef>
+
+
+	<!-- Reports section-->
+	<target name="report">
+		<antcall target="full-report" />
+	</target>
+
+	<target name="full-report">
+		<path id="jtl.results.path">
+			<fileset dir="${results.dir.jtl}" includes="**/*.jtl" />
+		</path>
+
+		<ac:for param="jtlfile">
+			<path refid="jtl.results.path" />
+			<sequential>
+				<ac:var name="testplan.prefix" unset="true" />
+				<basename file="@{jtlfile}" property="testplan.prefix" suffix=".jtl" />
+
+				<xslt in="@{jtlfile}" out="${results.dir.html}/fullreport-${testplan.prefix}.html" style="${templates.dir}/xsl/full-results-report.xsl" force="true">
+					<classpath location="${basedir}/lib/xalan.jar" />
+					<factory name="org.apache.xalan.processor.TransformerFactoryImpl">
+						<attribute name="http://xml.apache.org/xalan/features/optimize" value="true" />
+					</factory>
+				</xslt>
+
+			</sequential>
+		</ac:for>
+	</target>
+	
+
+</project>

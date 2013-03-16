@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="Template for Build file in Load Tests With using JMeter" basedir="." default="run-all" xmlns:ac="antlib:net.sf.antcontrib">
+	<description>Builds, testing, and runs the project [Your Project] Load Test.</description>
+
+	<import file="build-commons.xml"/>
+	
+	<target name="run-all" depends="checkProperties,load-init,TestScriptTemplate"/>
+
+   
+    <target name="TestScriptTemplate" depends="checkProperties,load-init">
+		<run-scenario scenario="TestScriptTemplate"/>
+		<antcall target="report"/>
+	</target>		
+	
+</project>

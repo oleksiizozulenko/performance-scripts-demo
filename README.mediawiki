@@ -1,0 +1,134 @@
+
+
+== Running scenarios ==
+
+ Performance (Load)  did as simple as possible. 
+ Base principle - just one environment in one time but it's possible to run different scenarios. 
+
+
+== Script run-tests.sh command line arguments ==
+ All command line arguments have formant <nowiki>[parameter]=[value] </nowiki>
+
+{| class="wikitable"  border="1" cellpadding="5" cellspacing="0" width="100%"
+! align="center" style="width:200pt; " scope="col" | Parameter
+! style="width:100pt;" scope="col" | Description
+
+|- 
+| <code>--results-dir</code>
+|  Directory where to save results  '''default:''' <nowiki>${user.home}/performance-results/</nowiki>  ''tip:'' when you didn't set results dir and default directory not found then all resutls will be stored in folder <nowiki> [`dirname run-scripts.sh`]/results/</nowiki> 
+
+|-
+| <code>--users</code>
+| How many virtual users will be started. '''default:''' 10
+
+|-
+| <code>--duration</code> in seconds
+| How much time scenario will be running. '''default:''' 15 min 
+
+|- 
+| <code>--rampup</code> in seconds
+| How much time jmeter start threads. Used for calculate load profile. '''default:''' 1 sec
+
+|-
+| <code>--delay</code> in seconds
+| Startup delay. How much time jmeter wait before start scenario. '''default:''' 0
+
+|-
+| <code>--scenarios</code>
+| Names of scenarios for run. You can set few space-separated. Example <code>--scenarios="TestScriptName1 TestScriptName2 TestScriptNameN"</code>. '''default:''' run-all 
+
+|- 
+| <code>--env-id</code>
+| Benchmark site id. Configured in config.properties file in format '''<nowiki>bmk.host.[bmk.id].id</nowiki>''' where this bmk.id you will set as --env-id property <span style="color: #ff0000;">This parameter is required</span>
+
+|-
+| <code>--perf-host</code>
+| dns of bmk server where serverAgent is running. '''default:''' nis1-dev2.srvlanlocal
+
+|-
+| <code>--perfmon</code>
+| Enables Performance monitor plugin '''default:''' true
+
+|-
+| <code>--perf-port</code>
+| port for serverAgent. '''default:''' 4545
+
+|-
+| <code>--loadosophia</code>
+| Enables Loadosophia plugin. '''default:''' false
+
+
+|}
+
+==== Example: ====
+
+<code>
+/bin/bash run-tests.sh --users=15 --duration=3600 --env-id=1 --scenarios="TestScriptName1 TestScriptName2"
+</code>
+
+will run scenarios '''TestScriptName1''' and '''TestScriptName2''' on environment with id 1 ( bmk1host1.example.com ) for 1 hour and 15 parallel threads (virtual users)
+
+=== For Windows Workstantions ===
+For windows workstantion you can use next command for running scenarios
+
+<code><nowiki>[your repository location]\tools\ant\bin\ant.bat -DANT_OPTS="-Xmx5128m -Xms1024m" -Drun.env.id=[your env.id] -Dresults.dir=[your results folder *required] -Duser.count=[your users count] -Drun.duration=[your run duration] [space separated names of scenarios] </nowiki></code> 
+
+==== Example: ==== 
+
+<code>
+<nowiki>C:\alex\obb-performance\tools\ant\bin\ant.bat  -DANT_OPTS="-Xmx5128m -Xms1024m" -Drun.env.id=1 -Dresults.dir=./results/ -Duser.count=5 -Drun.duration=300 TestScriptName</nowiki></code>
+
+== Parameters that can be changed during runtime ==
+{| class="wikitable"  border="1" cellpadding="5" cellspacing="0" 
+! align="center" |Parameter 
+! Description
+
+|-
+| '''user.count''' 
+| amount of virtual users (your load profile). This parameters equals to --users in run-tests.sh  
+
+|-
+| '''run.duration'''  
+| how much time should scenario run. This parameters equals to --duration in run-tests.sh  
+
+|-
+| '''perf.monitor.server''' 
+| server where located tested site.  '''default:''' my.perf.site
+
+|-
+| '''perf.monitor.port''' 
+| port of perfmon agent.  '''default:''' 4444 ; ''Tip:'' for my.perf.site use 4545 
+
+|-
+| '''is.upload.loadosophia'''
+| If you want to upload to Loadosopia (this requires loadosophia token and project. Note: Read about Loadosophia.org Uploader plugin),  '''default''': true
+
+|-
+| '''is.enable.perf.monitor'''
+| If you want to enable monitoring server metrics. (this plugin requires serverAgent is running. Note: Read about Performance Monitor Plugin for JMeter). '''default''': true
+
+
+|}
+
+== Parameters for scenarios ==
+
+You can set some parameters into any scenarios for run them on special cases. 
+Just put additional properties file next to your Scenario file
+All scenario specified properties are depends on benchmark site and should be stored in file with name 
+ 
+<code><nowiki>[scenario name].bmk[bmk.id].properties</nowiki></code>
+
+==== For example: ==== 
+
+<code>TestScriptTamplate.bmk1.properties</code> will set category and product id for bmk1host1 site 
+
+== Reporting ==
+
+For reporting uses two parts: '''html''' file and [https://loadosophia.org/ ]
+
+Html reports generates and sends automatically to [your_email].
+
+If reports uses default mount share when they will be appeard on [your_performance] servers. Links to them you will see in email body. 
+
+
+

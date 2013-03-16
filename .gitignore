@@ -1,0 +1,7 @@
+/bin
+.idea
+jmeter.log
+system.properties
+user.properties
+.project
+.DS_Store
